@@ -40,6 +40,14 @@ describe('OctoFit API contract', () => {
       expect(response.status).toBeGreaterThanOrEqual(400);
       expect(response.status).toBeLessThan(500);
     }
+    for (const invalidPayload of [
+      { userId: user._id.toString(), teamId: team._id.toString(), type: '', minutes: 30 },
+      { userId: user._id.toString(), teamId: team._id.toString(), type: 'run', minutes: -1 },
+      { userId: user._id.toString(), teamId: team._id.toString(), type: 'run', minutes: 1.5 },
+    ]) {
+      const response = await request(app).post('/api/activities').send(invalidPayload);
+      expect(response.status).toBe(400);
+    }
     expect(await Activity.countDocuments()).toBe(0);
     const created = await request(app).post('/api/activities').send({ userId: user._id.toString(), teamId: team._id.toString(), type: 'run', minutes: 30 });
     expect(created.status).toBe(201);
@@ -55,6 +63,13 @@ describe('OctoFit API contract', () => {
     const member = await User.create({ name: 'Mona', email: 'mona@example.com', fitnessGoal: 'endurance' });
     const invalid = await request(app).post('/api/teams').send({ mascot: 'Mona' });
     expect(invalid.status).toBe(400);
+    const invalidMember = await request(app).post('/api/teams').send({
+      name: 'Invalid team',
+      mascot: 'Mona',
+      members: [new mongoose.Types.ObjectId().toString()],
+    });
+    expect(invalidMember.status).toBe(400);
+    expect(await Team.countDocuments()).toBe(0);
     const created = await request(app).post('/api/teams').send({ name: 'Octocats', mascot: 'Mona', members: [member._id.toString()] });
     expect(created.status).toBe(201);
     expect(created.body.team).toMatchObject({ name: 'Octocats', mascot: 'Mona' });
@@ -64,6 +79,10 @@ describe('OctoFit API contract', () => {
     expect(listed.body.teams[0].members.map((id: string) => id.toString())).toContain(member._id.toString());
   });
   it('orders leaderboard entries by total points', async () => {
+    const emptyLeaderboard = await request(app).get('/api/leaderboard');
+    expect(emptyLeaderboard.status).toBe(200);
+    expect(emptyLeaderboard.body.leaderboard).toEqual([]);
+
     const mona = await createUserAndTeam('Mona', 'mona@example.com', 'Mona', 'Octocats');
     const hubot = await createUserAndTeam('Hubot', 'hubot@example.com', 'Hubot', 'Robocats');
     await Activity.create([
