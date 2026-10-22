@@ -1,6 +1,6 @@
 # OctoFit Tracker architecture
 
-OctoFit Tracker is a three-tier application for a school fitness program. The starter code includes API contracts and intentionally incomplete implementation points so you can use GitHub Copilot agent mode in a test-driven loop.
+OctoFit Tracker is a three-tier application for a school fitness program. Its API, presentation, and persistence layers implement the contracts below and are covered by focused tests for iterative development.
 
 ![Three-tier OctoFit architecture](../.github/images/octofit-architecture.svg)
 
@@ -31,7 +31,7 @@ OctoFit Tracker is a three-tier application for a school fitness program. The st
 - **Presentation tier**: Keep one React component per capability and use the shared API client for relative `/api` requests. Each route must expose an accessible loading status, a useful empty state, and an alert when a request fails; do not hide API errors or add presentation-tier data access.
 - **Logic tier**: Keep Express routes thin and put validation and business rules in the service layer. Return JSON matching the API contract, use deliberate 4xx responses for invalid or unknown resources, and leave authentication out of scope.
 - **Data tier**: Use the existing Mongoose models and references as the persistence boundary. Keep database configuration environment-driven with MongoDB on port `27017` by default. Seed representative users, teams, activities, and workouts idempotently without deleting unrelated records.
-- **Activity tracking**: Accept only a valid user and team reference and a valid activity payload; reject malformed IDs, missing records, and invalid field values as 4xx responses before creating a document. Store references, type, minutes, a computed points value, and an occurrence date; list persisted activities through the API.
+- **Activity tracking**: Accept only a valid user and team reference and a valid activity payload; reject malformed IDs, missing records, and invalid field values as 4xx responses before creating a document. Store references, type, minutes, a computed points value (currently one point per minute), and a server-generated occurrence date; list persisted activities through the API.
 - **Team management**: Require a non-empty name, preserve the supplied name and mascot, and store member references. Reject invalid member references rather than allowing database cast errors to become 500 responses.
 - **Leaderboard**: Sum persisted activity points per team, include each team's name, sort highest total first, and assign sequential 1-based ranks in the returned order. Return an empty list when there are no scored teams.
 - **Workout suggestions**: Resolve the requested user by email and return 404 if there is no match. Use the user's fitness goal and recent activity to select a relevant workout, put the best match first, and include a reason tied to the goal or activity. Do not return a generic suggestion for an unknown user.
